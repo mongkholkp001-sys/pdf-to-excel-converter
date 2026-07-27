@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "gsheetUrl": "https://script.google.com/macros/s/AKfycbyaF7hmMRO7J4oBbK0-fuPAWqsxytNpp0_YpY8GIpnmdqEvGrBX_wNQD8I3GNwQtCC1/exec"
+  },
+  "users": {
+    "admin": {
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "status": "active",
+      "filesConverted": 1,
+      "lastActive": "2026-07-27T12:00:58.222Z"
+    }
+  }
+}

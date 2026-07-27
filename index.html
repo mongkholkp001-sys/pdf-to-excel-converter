@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องมือแปลงรูปทะเบียนราษฎร์เป็น Excel | สพร. Online Converter</title>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tesseract.js for Browser-based OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- SheetJS for Browser-based Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PDF.js for Browser-based PDF Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>สพร. Document to Excel Converter</span>
+            </a>
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 0.75rem; align-items: center;">
+                <span id="current-user-display" style="display: none; color: #fff; font-weight: 600; font-size: 0.85rem; background: rgba(255,255,255,0.05); padding: 0.3rem 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); align-items: center;">
+                    <i class="fa-solid fa-user-tag" style="margin-right: 6px; color: var(--primary);"></i>
+                    <span id="user-display-name">คุณ ...</span>
+                </span>
+                <button id="btn-admin-panel" style="display: none; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); padding: 0.35rem 0.75rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;" onclick="openAdminModal()">
+                    <i class="fa-solid fa-users-gear" style="margin-right: 4px;"></i> จัดการผู้ใช้
+                </button>
+                <button id="btn-logout" style="display: none; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.35rem 0.75rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;" onclick="handleLogout()">
+                    <i class="fa-solid fa-right-from-bracket" style="margin-right: 4px;"></i> ออกจากระบบ
+                </button>
+                <span id="user-status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-weight: 600; cursor: pointer; border: 1px solid rgba(16, 185, 129, 0.3); transition: all 0.3s ease;" onclick="toggleUserStatus()" title="คลิกเพื่อสลับสถานะจำลอง">
+                    <i class="fa-solid fa-circle-check" style="margin-right: 4px;"></i> Active
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Auth Container -->
+    <div id="auth-container" style="display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 2rem;">
+        <div class="card" style="width: 100%; max-width: 450px; padding: 2.5rem; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h1 style="font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-shield-halved" style="color: var(--primary); margin-right: 8px;"></i>
+                    เข้าใช้งานระบบ สพร.
+                </h1>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">กรุณาลงชื่อเข้าใช้เพื่อเริ่มต้นสแกนและแปลงไฟล์</p>
+            </div>
+            
+            <div style="display: flex; background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 4px; margin-bottom: 1.5rem;">
+                <button id="tab-login" style="flex: 1; padding: 0.5rem; border: none; background: var(--primary); color: #fff; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+                <button id="tab-register" style="flex: 1; padding: 0.5rem; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;" onclick="switchAuthTab('register')">สมัครบัญชีใหม่</button>
+            </div>
+            
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #fff; margin-bottom: 0.5rem;">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="auth-username" required style="width: 100%; padding: 0.75rem; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s;" placeholder="กรอกชื่อผู้ใช้">
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #fff; margin-bottom: 0.5rem;">รหัสผ่าน (Password)</label>
+                    <input type="password" id="auth-password" required style="width: 100%; padding: 0.75rem; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s;" placeholder="กรอกรหัสผ่าน">
+                </div>
+                <button type="submit" id="btn-auth-submit" style="width: 100%; padding: 0.85rem; border: none; background: var(--primary); color: #fff; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.3s;">
+                    เข้าสู่ระบบ
+                </button>
+            </form>
+            <div id="auth-message" style="margin-top: 1rem; text-align: center; font-size: 0.9rem; font-weight: 500;"></div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main id="main-workspace" style="grid-template-columns: 1fr; gap: 1.5rem; display: none;">
+        <!-- Top: Conversion Statistics Dashboard -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div>
+                    <span class="stat-label"><i class="fa-solid fa-list-check"></i> จำนวนแปลงต่อครั้ง (รอบนี้)</span>
+                    <div class="stat-value" id="current-batch-count">0</div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            </div>
+            
+            <div class="stat-card" style="flex: 2;">
+                <div style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="stat-label"><i class="fa-solid fa-chart-line"></i> ยอดสะสมที่แปลงแล้วทั้งหมด (นับรวมทุกรอบที่ประมวลผล)</span>
+                        <div class="stat-value" id="all-time-count" style="margin-top: 0;">0</div>
+                    </div>
+                    
+                    <div class="date-inputs">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">เริ่มวันที่:</label>
+                        <input type="date" id="start-date" class="date-input">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">สิ้นสุดวันที่:</label>
+                        <input type="date" id="end-date" class="date-input">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle: Upload & Control Panel -->
+        <section class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center;">
+            <div>
+                <h2 class="card-title">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    อัปโหลดรูปภาพหรือ PDF ทะเบียนราษฎร์
+                </h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                    ลากรูปภาพหรือไฟล์ PDF มาวางเพื่อสแกนสกัดข้อมูลและบันทึกลงตาราง Excel อัตโนมัติ
+                </p>
+                <!-- Drag & Drop Zone -->
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-icon">
+                        <i class="fa-regular fa-file-pdf"></i>
+                    </div>
+                    <p>ลากรูปภาพหรือไฟล์ PDF มาวางที่นี่ หรือ <strong>คลิกเพื่อเลือกไฟล์</strong></p>
+                    <span class="upload-subtext">รองรับไฟล์ PNG, JPG, JPEG, PDF</span>
+                    <input type="file" id="file-input" accept="image/*,application/pdf" multiple>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="preview-container" id="preview-container">
+                    <button class="preview-remove" id="preview-remove" title="ลบรูปภาพ">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <img id="preview-img" src="" alt="เอกสารที่อัปโหลด">
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-folder-open" style="color: var(--primary-light);"></i> 
+                    คิวเอกสารที่รอดำเนินการ (สแกนแปลงไฟล์)
+                </h3>
+                
+                <!-- Queue List Container -->
+                <div id="queue-container" style="background: rgba(0, 0, 0, 0.25); padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border-color); height: 120px; overflow-y: auto; margin-bottom: 0.75rem; font-size: 0.85rem;">
+                    <div id="queue-empty-msg" style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
+                        ลากไฟล์มาวาง หรือเลือกไฟล์รูป/PDF เพื่อเข้าคิว
+                    </div>
+                    <ul id="queue-list" style="list-style: none; padding: 0; margin: 0; display: none; flex-direction: column; gap: 0.35rem;">
+                        <!-- Items rendered dynamically -->
+                    </ul>
+                </div>
+
+                <!-- Process Status Loading -->
+                <div class="status-box" id="status-box" style="margin-bottom: 0.75rem; margin-top: 0;">
+                    <div class="spinner-box">
+                        <div class="spinner"></div>
+                        <span id="status-text">กำลังสกัดข้อมูล...</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div class="btn-group" style="flex-direction: row; gap: 0.75rem; margin-top: 0;">
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()" style="flex: 1.2; font-size: 0.85rem; padding: 0.75rem;">
+                        <i class="fa-solid fa-plus"></i> เพิ่มไฟล์เข้าคิว
+                    </button>
+                    <button class="btn btn-success" id="btn-start-convert" style="flex: 1.5; font-size: 0.85rem; padding: 0.75rem; display: none;">
+                        <i class="fa-solid fa-play"></i> เริ่มแปลงไฟล์ทั้งหมด
+                    </button>
+                    <button class="btn btn-secondary" id="btn-clear-queue" style="flex: 0.8; font-size: 0.85rem; padding: 0.75rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); display: none;">
+                        <i class="fa-solid fa-trash-arrow-up"></i> ล้างคิว
+                    </button>
+                    <button class="btn btn-secondary" id="btn-demo" style="flex: 0.8; font-size: 0.85rem; padding: 0.75rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> รูปจำลอง
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom: Data Grid & Export Panel -->
+        <section class="card data-panel">
+            <div class="panel-header">
+                <h2 class="card-title" style="margin-bottom: 0;">
+                    <i class="fa-solid fa-table-list"></i>
+                    ตารางข้อมูลระบบ สพร. (ดับเบิ้ลคลิกในตารางเพื่อแก้ไข)
+                </h2>
+                
+                <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                    <button class="btn btn-secondary" onclick="addEmptyRow()" style="padding: 0.5rem 1.25rem; width: auto; font-size: 0.85rem; margin-left: 0;">
+                        <i class="fa-solid fa-plus"></i> เพิ่มแถวเปล่า
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearTable()" style="padding: 0.5rem 1.25rem; width: auto; font-size: 0.85rem; background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--danger); margin-left: 0;">
+                        <i class="fa-solid fa-trash-can"></i> ล้างตาราง
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editable Data Grid -->
+            <div class="table-container">
+                <table id="data-table">
+                    <thead id="table-head">
+                        <!-- Headers populated dynamically -->
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Content populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Export Operations -->
+            <div class="panel-actions">
+                <button class="btn btn-success" id="btn-export-excel" style="flex: 1; padding: 1rem;">
+                    <i class="fa-solid fa-file-excel" style="font-size: 1.2rem;"></i> ส่งออกเป็น Excel (.xlsx) ที่ตรงตามรูปแบบ
+                </button>
+                <button class="btn btn-accent" id="btn-export-csv" style="flex: 1; padding: 1rem;">
+                    <i class="fa-solid fa-file-csv" style="font-size: 1.2rem;"></i> ส่งออกเป็น CSV (.csv) เพื่อเปิดใน Excel
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Admin Dashboard Modal -->
+    <div id="admin-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
+        <div class="card" style="width: 100%; max-width: 900px; max-height: 85vh; display: flex; flex-direction: column; padding: 2rem; background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center;">
+                    <i class="fa-solid fa-users-gear" style="color: var(--primary); margin-right: 12px; font-size: 1.6rem;"></i>
+                    แผงควบคุมสิทธิ์และผู้ใช้งานระบบ
+                </h2>
+                <button onclick="closeAdminModal()" style="background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 1.25rem; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div style="overflow-y: auto; flex: 1; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);" class="table-container">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(0,0,0,0.2);">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-size: 0.95rem; background: rgba(255,255,255,0.02);">
+                            <th style="padding: 1rem;">ชื่อผู้ใช้งาน</th>
+                            <th style="padding: 1rem;">บทบาท</th>
+                            <th style="padding: 1rem; text-align: center;">จำนวนสแกน (ครั้ง)</th>
+                            <th style="padding: 1rem;">ใช้งานล่าสุด</th>
+                            <th style="padding: 1rem; text-align: center;">สถานะสิทธิ์</th>
+                            <th style="padding: 1rem; text-align: center;">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-user-list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Google Sheets Integration Section -->
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 0.75rem; display: flex; align-items: center;">
+                    <i class="fa-solid fa-table" style="color: #10b981; margin-right: 8px;"></i>
+                    ตั้งค่าการเชื่อมต่อ Google Sheets (บันทึกข้อมูลเรียลไทม์)
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    เมื่อผู้ใช้งานสแกนและแปลงข้อมูล ข้อมูลจะไหลเข้าไปต่อท้ายตารางบน Google Sheet ที่ตั้งค่าไว้โดยอัตโนมัติ
+                </p>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="setting-gsheet-url" style="flex: 1; padding: 0.65rem 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 0.9rem; outline: none; transition: border-color 0.3s;" placeholder="วางลิงก์ Web App URL จาก Google Apps Script (เช่น https://script.google.com/macros/s/.../exec)">
+                    <button onclick="saveGSheetSetting()" style="background: var(--primary); color: #fff; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.9rem;">
+                        บันทึกการเชื่อมต่อ
+                    </button>
+                </div>
+                <div id="gsheet-setting-message" style="margin-top: 0.5rem; font-size: 0.85rem; font-weight: 500;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 สพร. Document to Excel Converter. ประมวลผลบนเบราว์เซอร์ 100% ปลอดภัย มั่นใจได้ในข้อมูลชั้นความลับ</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
