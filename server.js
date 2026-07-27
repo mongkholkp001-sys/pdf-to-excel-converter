@@ -42,26 +42,35 @@ function callGScript(payload, callback) {
         return callback(new Error("Google Sheets URL not configured"));
     }
     
-    const sendRequest = (targetUrl) => {
+    const sendRequest = (targetUrl, method = 'POST', requestBody = JSON.stringify(payload)) => {
         try {
             const parsedUrl = new URL(targetUrl);
-            const body = JSON.stringify(payload);
             
             const options = {
                 hostname: parsedUrl.hostname,
                 path: parsedUrl.pathname + parsedUrl.search,
-                method: 'POST',
+                method: method,
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(body)
+                    'Content-Type': 'application/json'
                 }
             };
             
+            if (method === 'POST') {
+                options.headers['Content-Length'] = Buffer.byteLength(requestBody);
+            }
+            
             const req = https.request(options, (res) => {
-                if (res.statusCode === 302 || res.statusCode === 307 || res.statusCode === 301) {
+                if (res.statusCode === 302 || res.statusCode === 301) {
                     const redirectUrl = res.headers.location;
                     if (redirectUrl) {
-                        sendRequest(redirectUrl);
+                        sendRequest(redirectUrl, 'GET', '');
+                    }
+                    return;
+                }
+                if (res.statusCode === 307) {
+                    const redirectUrl = res.headers.location;
+                    if (redirectUrl) {
+                        sendRequest(redirectUrl, 'POST', requestBody);
                     }
                     return;
                 }
@@ -82,7 +91,9 @@ function callGScript(payload, callback) {
                 callback(e);
             });
             
-            req.write(body);
+            if (method === 'POST') {
+                req.write(requestBody);
+            }
             req.end();
         } catch (e) {
             callback(e);
