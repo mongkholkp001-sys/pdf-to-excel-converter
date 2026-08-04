@@ -389,7 +389,9 @@ const server = http.createServer((req, res) => {
     }
     
     // Normalize URL and prevent directory traversal
-    let filePath = req.url === '/' ? '/index.html' : req.url;
+    const parsedUrl = new URL(req.url, 'http://localhost');
+    let pathname = parsedUrl.pathname;
+    let filePath = pathname === '/' ? '/index.html' : pathname;
     filePath = path.join(__dirname, filePath);
     
     const extname = path.extname(filePath);
