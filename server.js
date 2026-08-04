@@ -261,7 +261,16 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
-    
+    // Debug Python endpoint
+    if (req.method === 'GET' && req.url === '/api/debug-python') {
+        const { exec } = require('child_process');
+        exec('python -c "import fitz; print(\'SUCCESS fitz\'); import openpyxl; print(\'SUCCESS openpyxl\')"', (err, stdout, stderr) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(`STDOUT:\n${stdout}\nSTDERR:\n${stderr}\nERR:\n${err ? err.message : 'none'}`);
+        });
+        return;
+    }
+
     // 6. Settings Endpoints (Get and Save Google Sheet URL)
     if (req.method === 'GET' && req.url === '/api/settings') {
         const authHeader = req.headers['authorization'] || '';
