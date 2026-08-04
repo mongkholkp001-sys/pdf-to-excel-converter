@@ -677,8 +677,6 @@ function parseAndAppendRow(text, fileName) {
             province: "พังงา",
             zipcode: "82000"
         };
-    }
-
     } else if (normalizedText.includes("3430500264873") || text.includes("ประพต") || text.includes("อุทุมพิรัตน์")) {
         overrideData = {
             name: "นาย ประพต อุทุมพิรัตน์",
