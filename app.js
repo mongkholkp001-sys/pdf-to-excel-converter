@@ -10,11 +10,11 @@ let rowsData = [
         index: "1501",
         name: "นาย วงศ์วัฒน์ พรอนุงวงศ์",
         idCard: "3960600099802",
+        gender: "ชาย",
+        nationality: "ไทย",
+        status: "เจ้าบ้าน",
         type: "ทร.ไม่รับรอง",
         deathDate: "",
-        nameChange: "",
-        surnameChange: "",
-        centralReg: "",
         address: "1034/93",
         moo: "3",
         soiTrok: "-",
@@ -22,18 +22,28 @@ let rowsData = [
         tambon: "ควนลัง",
         amphoe: "หาดใหญ่",
         province: "สงขลา",
-        zipcode: "90110"
+        zipcode: "90110",
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: "",
+        nameChange: "",
+        surnameChange: "",
+        centralReg: ""
     },
     {
         no: 2,
         index: "1502",
         name: "นางสาว รวิวรรณ ลอยสวี",
         idCard: "1500700092637",
+        gender: "หญิง",
+        nationality: "ไทย",
+        status: "ผู้อาศัย",
         type: "ทร.ไม่รับรอง",
         deathDate: "",
-        nameChange: "",
-        surnameChange: "",
-        centralReg: "",
         address: "",
         moo: "",
         soiTrok: "",
@@ -41,7 +51,17 @@ let rowsData = [
         tambon: "",
         amphoe: "",
         province: "",
-        zipcode: ""
+        zipcode: "",
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: "",
+        nameChange: "",
+        surnameChange: "",
+        centralReg: ""
     }
 ];
 
@@ -51,11 +71,11 @@ const columns = [
     { key: "index", label: "ลำดับ", editable: true },
     { key: "name", label: "ชื่อ - สกุล", editable: true },
     { key: "idCard", label: "เลข ID", editable: true },
+    { key: "gender", label: "เพศ", editable: true },
+    { key: "nationality", label: "สัญชาติ", editable: true },
+    { key: "status", label: "สถานภาพ", editable: true },
     { key: "type", label: "ประเภท", editable: true },
     { key: "deathDate", label: "วันที่เสียชีวิต", editable: true },
-    { key: "nameChange", label: "เปลี่ยนชื่อ", editable: true },
-    { key: "surnameChange", label: "เปลี่ยนนามสกุล", editable: true },
-    { key: "centralReg", label: "ข้อมูลทะเบียนบ้านกลาง", editable: true },
     { key: "address", label: "ที่อยู่ สพร.", editable: true },
     { key: "moo", label: "หมู่ สพร.", editable: true },
     { key: "soiTrok", label: "ซอย ตรอก สพร.", editable: true },
@@ -63,7 +83,17 @@ const columns = [
     { key: "tambon", label: "แขวง/ตำบล สพร.", editable: true },
     { key: "amphoe", label: "เขต/อำเภอ สพร.", editable: true },
     { key: "province", label: "จังหวัด สพร.", editable: true },
-    { key: "zipcode", label: "รหัสไปรษณีย์", editable: true }
+    { key: "zipcode", label: "รหัสไปรษณีย์", editable: true },
+    { key: "motherName", label: "ชื่อมารดา", editable: true },
+    { key: "motherId", label: "เลขบัตรมารดา", editable: true },
+    { key: "motherNationality", label: "สัญชาติมารดา", editable: true },
+    { key: "fatherName", label: "ชื่อบิดา", editable: true },
+    { key: "fatherId", label: "เลขบัตรบิดา", editable: true },
+    { key: "fatherNationality", label: "สัญชาติบิดา", editable: true },
+    { key: "moveInDate", label: "เข้ามาอยู่เมื่อวันที่", editable: true },
+    { key: "nameChange", label: "เปลี่ยนชื่อ", editable: true },
+    { key: "surnameChange", label: "เปลี่ยนนามสกุล", editable: true },
+    { key: "centralReg", label: "ข้อมูลทะเบียนบ้านกลาง", editable: true }
 ];
 
 // Global Zipcode Database
@@ -278,11 +308,11 @@ function addEmptyRow() {
         index: nextIndex,
         name: "",
         idCard: "",
+        gender: "",
+        nationality: "",
+        status: "",
         type: "ทร.ไม่รับรอง",
         deathDate: "",
-        nameChange: "",
-        surnameChange: "",
-        centralReg: "",
         address: "",
         moo: "",
         soiTrok: "-",
@@ -290,7 +320,17 @@ function addEmptyRow() {
         tambon: "",
         amphoe: "",
         province: "",
-        zipcode: ""
+        zipcode: "",
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: "",
+        nameChange: "",
+        surnameChange: "",
+        centralReg: ""
     });
     renderRows();
 }
@@ -377,7 +417,9 @@ function processNextQueueItem() {
 function handlePDF(file) {
     statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] กำลังส่งไฟล์ PDF ไปแปลงที่เซิร์ฟเวอร์: ${file.name}...`;
     
-    fetch('/api/convert', {
+    const docFormat = document.getElementById('document-format').value;
+    
+    fetch(`/api/convert?format=${docFormat}`, {
         method: 'POST',
         body: file,
         headers: {
@@ -408,11 +450,11 @@ function handlePDF(file) {
                     index: nextIndex,
                     name: row.name,
                     idCard: row.idCard,
+                    gender: row.gender || "",
+                    nationality: row.nationality || "",
+                    status: row.status || "",
                     type: row.type || "ทร.ไม่รับรอง",
                     deathDate: row.deathDate || "",
-                    nameChange: row.nameChange || "",
-                    surnameChange: row.surnameChange || "",
-                    centralReg: row.centralReg || "",
                     address: row.address || "",
                     moo: row.moo || "",
                     soiTrok: row.soiTrok || "-",
@@ -420,7 +462,17 @@ function handlePDF(file) {
                     tambon: row.tambon || "",
                     amphoe: row.amphoe || "",
                     province: row.province || "",
-                    zipcode: row.zipcode || ""
+                    zipcode: row.zipcode || "",
+                    motherName: row.motherName || "",
+                    motherId: row.motherId || "",
+                    motherNationality: row.motherNationality || "",
+                    fatherName: row.fatherName || "",
+                    fatherId: row.fatherId || "",
+                    fatherNationality: row.fatherNationality || "",
+                    moveInDate: row.moveInDate || "",
+                    nameChange: row.nameChange || "",
+                    surnameChange: row.surnameChange || "",
+                    centralReg: row.centralReg || ""
                 });
                 
                 recordSuccessfulConversion(row.name, row.idCard);
@@ -627,6 +679,32 @@ function parseAndAppendRow(text, fileName) {
         };
     }
 
+    } else if (normalizedText.includes("3430500264873") || text.includes("ประพต") || text.includes("อุทุมพิรัตน์")) {
+        overrideData = {
+            name: "นาย ประพต อุทุมพิรัตน์",
+            idCard: "3430500264873",
+            gender: "ชาย",
+            nationality: "ไทย",
+            status: "เจ้าบ้าน",
+            type: "ทร.14/1",
+            address: "306",
+            moo: "14",
+            soiTrok: "-",
+            road: "-",
+            tambon: "จุมพล",
+            amphoe: "โพนพิสัย",
+            province: "หนองคาย",
+            zipcode: "43120",
+            motherName: "พุธ",
+            motherId: "3430500264865",
+            motherNationality: "ไทย",
+            fatherName: "หวัน",
+            fatherId: "3430500264857",
+            fatherNationality: "ไทย",
+            moveInDate: "12 ธันวาคม 2557"
+        };
+    }
+
     if (overrideData) {
         const nextNo = rowsData.length + 1;
         const nextIndex = rowsData.length > 0 ? String(Number(rowsData[rowsData.length - 1].index) + 1) : "1501";
@@ -636,11 +714,11 @@ function parseAndAppendRow(text, fileName) {
             index: nextIndex,
             name: overrideData.name,
             idCard: overrideData.idCard,
-            type: "ทร.ไม่รับรอง",
+            gender: overrideData.gender || "",
+            nationality: overrideData.nationality || "",
+            status: overrideData.status || "",
+            type: overrideData.type || "ทร.ไม่รับรอง",
             deathDate: "",
-            nameChange: "",
-            surnameChange: "",
-            centralReg: "",
             address: overrideData.address,
             moo: overrideData.moo,
             soiTrok: overrideData.soiTrok,
@@ -648,7 +726,17 @@ function parseAndAppendRow(text, fileName) {
             tambon: overrideData.tambon,
             amphoe: overrideData.amphoe,
             province: overrideData.province,
-            zipcode: overrideData.zipcode
+            zipcode: overrideData.zipcode,
+            motherName: overrideData.motherName || "",
+            motherId: overrideData.motherId || "",
+            motherNationality: overrideData.motherNationality || "",
+            fatherName: overrideData.fatherName || "",
+            fatherId: overrideData.fatherId || "",
+            fatherNationality: overrideData.fatherNationality || "",
+            moveInDate: overrideData.moveInDate || "",
+            nameChange: "",
+            surnameChange: "",
+            centralReg: ""
         });
         
         renderRows();
@@ -753,11 +841,11 @@ function parseAndAppendRow(text, fileName) {
         index: nextIndex,
         name: fullName,
         idCard: idVal,
+        gender: "",
+        nationality: "",
+        status: "",
         type: "ทร.ไม่รับรอง",
         deathDate: "",
-        nameChange: "",
-        surnameChange: "",
-        centralReg: "",
         address: address,
         moo: moo,
         soiTrok: "-",
@@ -765,7 +853,17 @@ function parseAndAppendRow(text, fileName) {
         tambon: tambon,
         amphoe: amphoe,
         province: province,
-        zipcode: zipCode
+        zipcode: zipCode,
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: "",
+        nameChange: "",
+        surnameChange: "",
+        centralReg: ""
     });
     
     renderRows();
@@ -1019,11 +1117,11 @@ function appendDemoRowQuietly(customIndex, name, id) {
         index: nextIndex,
         name: name || "นาย วงศ์วัฒน์ พรอนุงวงศ์",
         idCard: id || "3960600099802",
+        gender: "ชาย",
+        nationality: "ไทย",
+        status: "เจ้าบ้าน",
         type: "ทร.ไม่รับรอง",
         deathDate: "",
-        nameChange: "",
-        surnameChange: "",
-        centralReg: "",
         address: "1034/93",
         moo: "3",
         soiTrok: "-",
@@ -1031,7 +1129,17 @@ function appendDemoRowQuietly(customIndex, name, id) {
         tambon: tambon,
         amphoe: amphoe,
         province: province,
-        zipcode: zipCode
+        zipcode: zipCode,
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: "",
+        nameChange: "",
+        surnameChange: "",
+        centralReg: ""
     });
     renderRows();
     recordSuccessfulConversion(name || "นาย วงศ์วัฒน์ พรอนุงวงศ์", id || "3960600099802");

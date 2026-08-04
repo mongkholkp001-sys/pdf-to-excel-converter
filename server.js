@@ -324,9 +324,11 @@ const server = http.createServer((req, res) => {
     }
     
     // 5. Protected Conversion API
-    if (req.method === 'POST' && req.url === '/api/convert') {
+    if (req.method === 'POST' && req.url.startsWith('/api/convert')) {
         const authHeader = req.headers['authorization'] || '';
         const token = authHeader.replace('Bearer ', '').trim();
+        const parsedUrl = new URL(req.url, 'http://localhost');
+        const docFormat = parsedUrl.searchParams.get('format') || 'death-list';
         
         callGScript({ action: 'getUsers' }, (err, result) => {
             if (err) {
@@ -353,7 +355,7 @@ const server = http.createServer((req, res) => {
                 
                 const { exec } = require('child_process');
                 const scriptPath = path.join(__dirname, 'parse_pdf_to_json.py');
-                exec(`python "${scriptPath}" "${tempPdfPath}"`, { encoding: 'utf-8' }, (err, stdout, stderr) => {
+                exec(`python "${scriptPath}" "${tempPdfPath}" "${docFormat}"`, { encoding: 'utf-8' }, (err, stdout, stderr) => {
                     try { fs.unlinkSync(tempPdfPath); } catch(_) {}
                     
                     if (err) {
