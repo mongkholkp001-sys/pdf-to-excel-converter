@@ -339,6 +339,18 @@ const server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url, 'http://localhost');
         const docFormat = parsedUrl.searchParams.get('format') || 'death-list';
         
+        // Buffer request body immediately to prevent stream data loss
+        let bodyChunks = [];
+        req.on('data', chunk => {
+            bodyChunks.push(chunk);
+        });
+        
+        const bodyPromise = new Promise((resolve) => {
+            req.on('end', () => {
+                resolve(Buffer.concat(bodyChunks));
+            });
+        });
+        
         callGScript({ action: 'getUsers' }, (err, result) => {
             if (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -353,12 +365,7 @@ const server = http.createServer((req, res) => {
                 return;
             }
             
-            let bodyChunks = [];
-            req.on('data', chunk => {
-                bodyChunks.push(chunk);
-            });
-            req.on('end', () => {
-                const buffer = Buffer.concat(bodyChunks);
+            bodyPromise.then(buffer => {
                 const tempPdfPath = path.join(__dirname, 'temp.pdf');
                 fs.writeFileSync(tempPdfPath, buffer);
                 
