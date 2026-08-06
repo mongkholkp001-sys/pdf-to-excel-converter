@@ -404,6 +404,57 @@ const server = http.createServer((req, res) => {
         return;
     }
     
+    // 7. Sync Rows Endpoint (Batch sync client-side OCR results)
+    if (req.method === 'POST' && req.url === '/api/sync-rows') {
+        const authHeader = req.headers['authorization'] || '';
+        const token = authHeader.replace('Bearer ', '').trim();
+        
+        callGScript({ action: 'getUsers' }, (err, result) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+                return;
+            }
+            
+            const currentUser = result.users ? result.users.find(u => u.username === token) : null;
+            if (!currentUser || currentUser.status !== 'active') {
+                res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ success: false, error: 'ไม่มีสิทธิ์เข้าใช้งานระบบ' }));
+                return;
+            }
+            
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', () => {
+                try {
+                    const { rows } = JSON.parse(body);
+                    if (rows && rows.length > 0) {
+                        callGScript({ 
+                            action: 'appendScan', 
+                            scanRows: rows, 
+                            username: currentUser.username 
+                        }, (gErr, gResult) => {
+                            if (gErr) {
+                                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                                res.end(JSON.stringify({ success: false, error: gErr.message }));
+                            } else {
+                                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                                res.end(JSON.stringify({ success: true, message: 'บันทึกข้อมูลเข้า Google Sheets สำเร็จ' }));
+                            }
+                        });
+                    } else {
+                        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ success: true, message: 'ไม่มีข้อมูลให้บันทึก' }));
+                    }
+                } catch (e) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ success: false, error: 'ข้อมูลคำขอไม่ถูกต้อง' }));
+                }
+            });
+        });
+        return;
+    }
+    
     // Normalize URL and prevent directory traversal
     const parsedUrl = new URL(req.url, 'http://localhost');
     let pathname = parsedUrl.pathname;

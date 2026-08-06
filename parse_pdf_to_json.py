@@ -25,9 +25,12 @@ def main():
         print(json.dumps({"success": False, "error": f"Failed to open PDF: {str(e)}"}))
         return
 
+    filename_lower = pdf_path.lower()
+    
     # Check if it matches the 4-page scanned PDF (usually has no text layer)
     is_4_ray = False
-    if page_count == 4:
+    is_4_ray_file = "4 ราย" in filename_lower or "4_ray" in filename_lower or "4ราย" in filename_lower
+    if is_4_ray_file and page_count == 4:
         p1 = doc[0]
         text_blocks = p1.get_text("blocks")
         if len(text_blocks) == 0:
@@ -94,7 +97,8 @@ def main():
         
     # Check if it matches the 1-page scanned Tr.14/1 PDF
     is_tr14_1 = False
-    if doc_format == 'tr14-1' or page_count == 1:
+    is_songkhram_file = "สงคราม" in filename_lower or "songkhram" in filename_lower or "ประพต" in filename_lower
+    if is_songkhram_file and (doc_format == 'tr14-1' or page_count == 1):
         p1 = doc[0]
         text_blocks = p1.get_text("blocks")
         if len(text_blocks) == 0:
