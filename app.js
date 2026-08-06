@@ -625,12 +625,17 @@ function parseTr14_1Text(text, pageNum, fileName) {
                           .replace(/b/gi, '6')
                           .replace(/z/gi, '2');
                           
-    // Extract ID (13 digit number)
-    const digitsOnly = cleanIdText.replace(/\D/g, '');
-    const idMatch = digitsOnly.match(/\d{13}/) || cleanIdText.match(/\d\-?\d{4}\-?\d{5}\-?\d{2}\-?\d/);
     let idCard = "";
-    if (idMatch) {
-        idCard = idMatch[0].replace(/\D/g, '');
+    // 1. Try to match 13-digit pattern with dashes first in cleanIdText
+    const dashedMatch = cleanIdText.match(/\d\-?\d{4}\-?\d{5}\-?\d{2}\-?\d/);
+    if (dashedMatch) {
+        idCard = dashedMatch[0].replace(/\D/g, '');
+    } else {
+        // 2. Try to match raw 13 digits
+        const rawDigitsMatch = cleanIdText.replace(/\D/g, '').match(/\d{13}/);
+        if (rawDigitsMatch) {
+            idCard = rawDigitsMatch[0];
+        }
     }
     
     // Parse Name
@@ -638,6 +643,7 @@ function parseTr14_1Text(text, pageNum, fileName) {
     const nameMatch = text.match(/ชื่อ\s*(นาย|นางสาว|นาง|พระ|เด็กชาย|เด็กหญิง)?\s*([ก-๙\s]+)/);
     if (nameMatch) {
         name = nameMatch[0].replace(/ชื่อ/, '').trim();
+        name = name.split(/(?:เพศ|เกิดเมื่อ|เลขประจำตัว|เลขรหัส|สัญชาติ)/)[0].trim();
         name = name.split('\n')[0].replace(/\s+/g, ' ').trim();
     }
     if (!name) {
@@ -672,14 +678,18 @@ function parseTr14_1Text(text, pageNum, fileName) {
     let motherName = "";
     const mothMatch = text.match(/มารดาชื่อ\s*([ก-๙\s]+)/) || text.match(/มารดา\s*([ก-๙\s]+)/);
     if (mothMatch) {
-        motherName = mothMatch[1].split('\n')[0].replace(/\s+/g, ' ').trim();
+        motherName = mothMatch[1].trim();
+        motherName = motherName.split(/(?:สัญชาติ|เพศ|เกิดเมื่อ|เลขประจำตัว|เลขบัตร)/)[0].trim();
+        motherName = motherName.split('\n')[0].replace(/\s+/g, ' ').trim();
     }
     
     // Parse Father's details
     let fatherName = "";
     const fathMatch = text.match(/บิดาชื่อ\s*([ก-๙\s]+)/) || text.match(/บิดา\s*([ก-๙\s]+)/);
     if (fathMatch) {
-        fatherName = fathMatch[1].split('\n')[0].replace(/\s+/g, ' ').trim();
+        fatherName = fathMatch[1].trim();
+        fatherName = fatherName.split(/(?:สัญชาติ|เพศ|เกิดเมื่อ|เลขประจำตัว|เลขบัตร)/)[0].trim();
+        fatherName = fatherName.split('\n')[0].replace(/\s+/g, ' ').trim();
     }
     
     // Parse Move-in date
@@ -704,22 +714,18 @@ function parseTr14_1Text(text, pageNum, fileName) {
     if (addrBlockMatch) {
         const addrText = addrBlockMatch[1];
         
-        // Extract house number
         const houseMatch = addrText.match(/ที่อยู่\s*([0-9/]+)/) || addrText.match(/^([0-9/]+)/);
         if (houseMatch) address = houseMatch[1];
         
-        // Extract Moo
         const mooM = addrText.match(/หมู่(?:\s*ที่)?\s*([0-9]+)/) || addrText.match(/ม\.\s*([0-9]+)/);
         if (mooM) moo = mooM[1];
         
-        // DB-assisted address component lookup
         const dbAddr = parseAddressFromDb(addrText);
         tambon = dbAddr.tambon;
         amphoe = dbAddr.amphoe;
         province = dbAddr.province;
         zipcode = dbAddr.zipcode;
         
-        // Fallbacks
         if (!province) {
             const provMatch = addrText.match(/(?:จังหวัด|จ\.)\s*([ก-๙]+)/);
             if (provMatch) province = provMatch[1];
