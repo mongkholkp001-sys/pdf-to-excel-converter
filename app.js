@@ -568,6 +568,7 @@ async function processClientSidePDFOCR(file, docFormat) {
             });
             
             renderRows();
+            exportToExcel(); // Auto-trigger Excel download immediately!
             statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] แปลงไฟล์ PDF ${file.name} สำเร็จทั้งหมด ${numPages} หน้า!`;
             
             setTimeout(() => {
@@ -1787,46 +1788,24 @@ let authToken = localStorage.getItem('auth_token') || null;
 let authMode = 'login'; // 'login' or 'register'
 
 function initAuth() {
-    const savedUser = localStorage.getItem('auth_user');
-    if (authToken && savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-            showWorkspace();
-        } catch (e) {
-            handleLogout();
-        }
-    } else {
-        showAuthScreen();
-    }
+    authToken = "admin";
+    currentUser = { username: "admin", role: "admin", status: "active" };
+    showWorkspace();
 }
 
 function showAuthScreen() {
-    document.getElementById('auth-container').style.display = 'flex';
-    document.getElementById('main-workspace').style.display = 'none';
-    document.getElementById('current-user-display').style.display = 'none';
-    document.getElementById('btn-admin-panel').style.display = 'none';
-    document.getElementById('btn-logout').style.display = 'none';
-    
-    // Reset forms
-    document.getElementById('auth-username').value = '';
-    document.getElementById('auth-password').value = '';
-    document.getElementById('auth-message').innerHTML = '';
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('main-workspace').style.display = 'block';
 }
 
 function showWorkspace() {
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('main-workspace').style.display = 'block';
     
-    // Header controls
-    document.getElementById('current-user-display').style.display = 'inline-flex';
-    document.getElementById('user-display-name').innerText = `คุณ ${currentUser.username}`;
-    document.getElementById('btn-logout').style.display = 'inline-flex';
-    
-    if (currentUser.role === 'admin') {
-        document.getElementById('btn-admin-panel').style.display = 'inline-flex';
-    } else {
-        document.getElementById('btn-admin-panel').style.display = 'none';
-    }
+    // Hide administrative/logout controls since auth is bypassed
+    document.getElementById('current-user-display').style.display = 'none';
+    document.getElementById('btn-logout').style.display = 'none';
+    document.getElementById('btn-admin-panel').style.display = 'none';
 }
 
 function switchAuthTab(mode) {
