@@ -474,7 +474,11 @@ const server = http.createServer((req, res) => {
                 res.end(`Sorry, check with the site admin for error: ${error.code} ..\n`);
             }
         } else {
-            res.writeHead(200, { 'Content-Type': contentType });
+            const headers = { 'Content-Type': contentType };
+            if (pathname === '/' || filePath.endsWith('index.html')) {
+                headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
+            }
+            res.writeHead(200, headers);
             res.end(content, 'utf-8');
         }
     });
