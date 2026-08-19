@@ -27,7 +27,7 @@ function getGSheetUrl() {
             return JSON.parse(data).gsheetUrl || "";
         }
     } catch (_) {}
-    return "https://script.google.com/macros/s/AKfycbyaF7hmMRO7J4oBbK0-fuPAWqsxytNpp0_YpY8GIpnmdqEvGrBX_wNQD8I3GNwQtCC1/exec";
+    return "https://script.google.com/macros/s/AKfycbz7h8aKj4zbhTqy2IHg1ZBqo8bHGwQt29E60tIoPOtYFg1Vq7CfbnXLLmSWgTwivROA/exec";
 }
 
 function saveGSheetUrl(url) {
