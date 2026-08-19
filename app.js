@@ -856,36 +856,20 @@ function parseTr14_1Text(text, pageNum, fileName) {
     };
 }
 
-// Helper to initialize and retrieve local persistent Tesseract Worker
+// Helper to initialize and retrieve local persistent Tesseract Worker (always using fast global CDN)
 async function getTesseractWorker() {
     if (!tesseractWorker) {
-        try {
-            statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] กำลังตั้งค่าระบบสแกนภาษาไทย (ออฟไลน์)...`;
-            tesseractWorker = await Tesseract.createWorker('tha+eng', 1, {
-                langPath: window.location.origin + '/tesseract/lang-data/',
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        const stepProgress = Math.round(m.progress * 100);
-                        const label = uploadQueue[currentQueueIndex] ? uploadQueue[currentQueueIndex].name : "เอกสาร";
-                        statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] สแกน ${label}: ${stepProgress}%`;
-                    }
+        statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] กำลังตั้งค่าระบบสแกนภาษาไทย...`;
+        tesseractWorker = await Tesseract.createWorker('tha+eng', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    const stepProgress = Math.round(m.progress * 100);
+                    const label = uploadQueue[currentQueueIndex] ? uploadQueue[currentQueueIndex].name : "เอกสาร";
+                    statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] สแกน ${label}: ${stepProgress}%`;
                 }
-            });
-            console.log("Local Tesseract worker created.");
-        } catch (localErr) {
-            console.warn("Failed to create local worker, falling back to CDN:", localErr);
-            statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] กำลังตั้งค่าระบบสแกนภาษาไทย (ออนไลน์)...`;
-            tesseractWorker = await Tesseract.createWorker('tha+eng', 1, {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        const stepProgress = Math.round(m.progress * 100);
-                        const label = uploadQueue[currentQueueIndex] ? uploadQueue[currentQueueIndex].name : "เอกสาร";
-                        statusText.innerText = `[ไฟล์ที่ ${currentQueueIndex + 1}/${totalQueueFiles}] สแกน ${label}: ${stepProgress}%`;
-                    }
-                }
-            });
-            console.log("CDN Tesseract worker created.");
-        }
+            }
+        });
+        console.log("CDN Tesseract worker created.");
     }
     return tesseractWorker;
 }
