@@ -1,6 +1,6 @@
 import sys
 import json
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 import re
 
 # Force sys.stdout to output UTF-8, resolving Windows encoding bugs
@@ -27,7 +27,7 @@ def main():
     doc_format = sys.argv[2] if len(sys.argv) > 2 else ""
     
     try:
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
         page_count = len(doc)
     except Exception as e:
         print(json.dumps({"success": False, "error": f"Failed to open PDF: {str(e)}"}))

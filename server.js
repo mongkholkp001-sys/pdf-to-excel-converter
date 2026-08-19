@@ -380,9 +380,17 @@ const server = http.createServer((req, res) => {
                         return;
                     }
                     
+                    // Extract only the valid JSON substring to bypass any Python warnings in stdout
+                    let jsonString = stdout;
+                    const jsonStart = stdout.indexOf('{');
+                    const jsonEnd = stdout.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+                        jsonString = stdout.substring(jsonStart, jsonEnd + 1);
+                    }
+                    
                     // Automatically append scanned rows to Google Sheets in real-time
                     try {
-                        const parsedResult = JSON.parse(stdout);
+                        const parsedResult = JSON.parse(jsonString);
                         if (parsedResult.success && parsedResult.rows && parsedResult.rows.length > 0) {
                             callGScript({ 
                                 action: 'appendScan', 
@@ -397,7 +405,7 @@ const server = http.createServer((req, res) => {
                     }
                     
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(stdout);
+                    res.end(jsonString);
                 });
             });
         });
