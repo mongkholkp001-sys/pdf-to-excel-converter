@@ -264,7 +264,7 @@ const server = http.createServer((req, res) => {
     // Debug Python endpoint
     if (req.method === 'GET' && req.url === '/api/debug-python') {
         const { exec } = require('child_process');
-        exec('tesseract --version', (err, stdout, stderr) => {
+        exec('python -c "import fitz, pytesseract, PIL, io; print(\'ALL IMPORTS OK\')"', (err, stdout, stderr) => {
             res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end(`STDOUT:\n${stdout}\nSTDERR:\n${stderr}\nERR:\n${err ? err.message : 'none'}`);
         });
