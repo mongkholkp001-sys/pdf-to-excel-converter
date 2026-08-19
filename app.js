@@ -417,8 +417,8 @@ function processNextQueueItem() {
 function handlePDF(file) {
     const docFormat = document.getElementById('document-format').value;
     
-    // Intercept Tr.14/1 and run client-side PDF OCR
-    if (docFormat === 'tr14-1') {
+    // Intercept PDF formats and run client-side PDF OCR to prevent server timeout/slowdown
+    if (docFormat === 'tr14-1' || docFormat === 'death-list') {
         processClientSidePDFOCR(file, docFormat);
         return;
     }
@@ -532,7 +532,12 @@ async function processClientSidePDFOCR(file, docFormat) {
                 const worker = await getTesseractWorker();
                 const { data: { text } } = await worker.recognize(imageSrc);
                 
-                const parsedRow = parseTr14_1Text(text, pageNum, file.name);
+                let parsedRow;
+                if (docFormat === 'tr14-1') {
+                    parsedRow = parseTr14_1Text(text, pageNum, file.name);
+                } else {
+                    parsedRow = parseDeathListText(text, pageNum, file.name);
+                }
                 ocrRows.push(parsedRow);
             }
             
@@ -582,6 +587,85 @@ async function processClientSidePDFOCR(file, docFormat) {
         }
     };
     fileReader.readAsArrayBuffer(file);
+}
+
+// Custom parser to extract all Death List (แบบบัญชีรายชื่อคนตาย) fields from OCR text
+function parseDeathListText(text, pageNum, fileName) {
+    let cleanIdText = text.replace(/o/gi, '0')
+                          .replace(/[il\|\[\]]/gi, '1')
+                          .replace(/s/gi, '5')
+                          .replace(/g/gi, '9')
+                          .replace(/b/gi, '6')
+                          .replace(/z/gi, '2');
+                          
+    let idCard = "";
+    const dashedMatch = cleanIdText.match(/\d\-?\d{4}\-?\d{5}\-?\d{2}\-?\d/);
+    if (dashedMatch) {
+        idCard = dashedMatch[0].replace(/\D/g, '');
+    } else {
+        const rawDigitsMatch = cleanIdText.replace(/\D/g, '').match(/\d{13}/);
+        if (rawDigitsMatch) {
+            idCard = rawDigitsMatch[0];
+        }
+    }
+    
+    const name = extractNameSmart(text, `หน้า ${pageNum}`);
+    const dbAddr = parseAddressFromDb(text);
+    
+    let address = "";
+    const addrMatch = text.match(/เลขที่\s*([0-9/]+)/);
+    if (addrMatch) address = addrMatch[1];
+    
+    let moo = "-";
+    const mooMatch = text.match(/หมู่ที่\s*([0-9]+)/);
+    if (mooMatch) moo = mooMatch[1];
+    
+    let road = "-";
+    const roadMatch = text.match(/ถนน\s*([ก-๙]+)/);
+    if (roadMatch) road = roadMatch[1];
+    
+    let tambon = dbAddr.tambon || "";
+    if (!tambon) {
+        const tamMatch = text.match(/(?:ตำบล|แขวง)\s*([ก-๙]+)/);
+        if (tamMatch) tambon = tamMatch[1];
+    }
+    
+    let amphoe = dbAddr.amphoe || "";
+    if (!amphoe) {
+        const ampMatch = text.match(/(?:อำเภอ|เขต)\s*([ก-๙]+)/);
+        if (ampMatch) amphoe = ampMatch[1];
+    }
+    
+    let province = dbAddr.province || "";
+    if (!province) {
+        const provMatch = text.match(/จังหวัด\s*([ก-๙]+)/);
+        if (provMatch) province = provMatch[1];
+    }
+    
+    return {
+        name: name,
+        idCard: idCard,
+        gender: "",
+        nationality: "ไทย",
+        status: "",
+        type: "ทร.ไม่รับรอง",
+        deathDate: "",
+        address: address,
+        moo: moo,
+        soiTrok: "-",
+        road: road,
+        tambon: tambon,
+        amphoe: amphoe,
+        province: province,
+        zipcode: dbAddr.zipcode || "",
+        motherName: "",
+        motherId: "",
+        motherNationality: "",
+        fatherName: "",
+        fatherId: "",
+        fatherNationality: "",
+        moveInDate: ""
+    };
 }
 
 // Custom parser to extract all Tr.14/1 fields from OCR text
